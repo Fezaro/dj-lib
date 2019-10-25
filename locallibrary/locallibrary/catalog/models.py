@@ -1,6 +1,7 @@
+import uuid
 from django.db import models
 from django.urls import reverse
-import uuid
+
 # Create your models here.
 
 class Genre(models.Model):
@@ -37,6 +38,12 @@ class Book(models.Model):
     def get_absolute_url(self):
         """returns the url to accesss a detail record for this book"""
         return reverse('book-detail', args=[str(self.id)])
+    
+    def display_genre(self):
+        """Create a stringfor genre to be used in Admin """
+        return ', '.join(genre.name for genre in self.genre.all()[:3])
+
+    display_genre.short_description = 'Genre'
 
 class BookInstance(models.Model):
     """model representing a specific copy of a book"""
@@ -82,7 +89,7 @@ class Author(models.Model):
 
 class Language(models.Model):
     """model  representing a language"""
-    name = models.CharField(max_length=100, help_text="Enter the books's natural language")
+    name = models.CharField(max_length=100, help_text="Enter the book's natural language")
 
     def __str__(self):
         """string representing the language model"""

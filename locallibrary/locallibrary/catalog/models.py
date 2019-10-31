@@ -1,6 +1,8 @@
 import uuid
 from django.db import models
 from django.urls import reverse
+from django.contrib.auth.models import User
+from datetime import date
 
 # Create your models here.
 
@@ -40,7 +42,7 @@ class Book(models.Model):
         return reverse('book-detail', args=[str(self.id)])
     
     def display_genre(self):
-        """Create a stringfor genre to be used in Admin """
+        """Create a string for genre to be used in Admin """
         return ', '.join(genre.name for genre in self.genre.all()[:3])
 
     display_genre.short_description = 'Genre'
@@ -48,22 +50,30 @@ class Book(models.Model):
 class BookInstance(models.Model):
     """model representing a specific copy of a book"""
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, help_text='Unique ID for this particular book across whole library')
-    book = models.ForeignKey('Book', on_delete=models.SET_NULL,null=True)
+    book = models.ForeignKey(Book, on_delete=models.SET_NULL, null=True)
     imprint = models.CharField(max_length=200)
     due_back = models.DateField(null=True, blank=True)
-
+    borrower = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
     LOAN_STATUS= (
         ('r', 'Reserved'),
         ('o', 'On loan'),
         ('a', 'Available'),
         ('m','Maintenance'),
     )
-
     status = models.CharField(max_length=1, choices=LOAN_STATUS, blank=True, default='m', help_text='book availability' )
 
 
     class Meta:
         ordering = ['due_back']
+        permissions = (("can_mark_returned", "Set book as returned"),)
+    
+    #verify if it is an empty fiels ,Django throws an error because empty values are not comparable
+    
+    @property
+    def is_overdue(self):
+        if self.due_back and date.today() > self.due_back:
+            return True
+        return False
 
     def __str__(self):
         """string for representing model object"""
@@ -93,5 +103,5 @@ class Language(models.Model):
 
     def __str__(self):
         """string representing the language model"""
-        return self.name
+        return f"{self.name}"
 
